@@ -48,7 +48,6 @@ public class DynamicCompressionRecipe extends CustomRecipe {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        // 後ほど登録するシリアライザーを返します
-        return null; 
+        return CompressMod.COMPRESSION_SERIALIZER.get();
     }
 }
