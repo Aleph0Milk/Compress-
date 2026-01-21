@@ -85,14 +85,12 @@ obfuscation {
 }
 
 dependencies {
-    // 修正： "net.neoforged:forge" ではなく "net.minecraftforge:forge" を使用します
-    implementation "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    // Forge本体の implementation 行を削除してください。
+    // legacyForge ブロックの設定から自動的に導入されます。
 
-    // Polymorph (先ほど修正した通り)
+    // Polymorphのみ残す
     modImplementation "curse.maven:polymorph-388800:6450982"
 }
-
-
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [
