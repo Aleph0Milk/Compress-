@@ -22,28 +22,31 @@ public class CompressMod {
     public static final String MODID = "alephs_compress";
     public static final Logger LOGGER = LogManager.getLogger();
 
-    // レシピシリアライザーの登録用バス
+    // --- 登録用レジストリ ---
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = 
         DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, MODID);
 
-    // 圧縮レシピのシリアライザー登録
+    // 圧縮レシピの登録
     public static final RegistryObject<SimpleCraftingRecipeSerializer<DynamicCompressionRecipe>> COMPRESSION_SERIALIZER = 
         SERIALIZERS.register("dynamic_compression", 
         () -> new SimpleCraftingRecipeSerializer<>(DynamicCompressionRecipe::new));
 
+    // 解凍レシピの登録 (ここにまとめました)
+    public static final RegistryObject<SimpleCraftingRecipeSerializer<DynamicDecompressionRecipe>> DECOMPRESSION_SERIALIZER = 
+        SERIALIZERS.register("dynamic_decompression", 
+        () -> new SimpleCraftingRecipeSerializer<>(DynamicDecompressionRecipe::new));
+
+
     public CompressMod() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
-        // 登録システムをバスに接続
         SERIALIZERS.register(modEventBus);
         
-        // イベント（設置不可・名前変更）を登録
         MinecraftForge.EVENT_BUS.register(this);
-        
         LOGGER.info("Compress! Mod has been initialized safely.");
     }
 
-    // ルール1: x1以上の設置禁止
+    // --- イベントハンドラ ---
+
     @SubscribeEvent
     public void onBlockPlace(PlayerInteractEvent.RightClickBlock event) {
         ItemStack stack = event.getItemStack();
@@ -55,13 +58,11 @@ public class CompressMod {
         }
     }
 
-    // ルール2: ツールチップに圧縮レベルを表示
     @SubscribeEvent
     public void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
         int level = CompressionUtils.getLevel(stack);
         if (level > 0) {
-            // アイテム名のすぐ下に金色で表示
             event.getToolTip().add(1, Component.literal("§6圧縮レベル: x" + level));
         }
     }
