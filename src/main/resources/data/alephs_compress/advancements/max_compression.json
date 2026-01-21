@@ -1,0 +1,30 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:beacon"
+    },
+    "title": {
+      "text": "ｹﾞﾝｶｲｱｯｼｭｸ"
+    },
+    "description": {
+      "text": "int値の最大だよ！でもこれ以上はオーバーフローするから圧縮できないようになってるんだ..."
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:story/root",
+  "criteria": {
+    "has_max_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "nbt": "{CompressionLevel:2147483647}"
+          }
+        ]
+      }
+    }
+  }
+}
