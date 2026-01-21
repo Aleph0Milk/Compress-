@@ -1,6 +1,5 @@
 package com.aleph0milk.compress;
 
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -15,13 +14,17 @@ public class DynamicCompressionRecipe extends CustomRecipe {
         super(id, category);
     }
 
-    // クラフト盤の9マスがすべて同じアイテム、かつ同じレベルかチェック
     @Override
     public boolean matches(CraftingContainer container, Level level) {
         ItemStack first = container.getItem(0);
         if (first.isEmpty()) return false;
+
+        // 【追加】すでにint最大値なら、これ以上圧縮させない（レシピを非表示にする）
+        if (CompressionUtils.getLevel(first) >= Integer.MAX_VALUE) {
+            return false;
+        }
         
-        // 9マスすべて埋まっているか、かつ最初のスロットと同じアイテムか
+        // 9マスすべて埋まっているか、かつ最初のスロットと同じアイテム（NBT含む）か
         for (int i = 0; i < 9; i++) {
             ItemStack stack = container.getItem(i);
             if (stack.isEmpty() || !ItemStack.isSameItemSameTags(stack, first)) {
@@ -31,14 +34,15 @@ public class DynamicCompressionRecipe extends CustomRecipe {
         return true;
     }
 
-    // 実際にクラフトした結果を返す
     @Override
     public ItemStack assemble(CraftingContainer container, RegistryAccess access) {
         ItemStack first = container.getItem(0);
         int currentLevel = CompressionUtils.getLevel(first);
         
-        // レベルを+1して返す
-        return CompressionUtils.withLevel(first, currentLevel + 1);
+        // 安全のためにここでも判定（通常はmatchesで弾かれるので+1される）
+        int nextLevel = (currentLevel == Integer.MAX_VALUE) ? Integer.MAX_VALUE : currentLevel + 1;
+        
+        return CompressionUtils.withLevel(first, nextLevel);
     }
 
     @Override
