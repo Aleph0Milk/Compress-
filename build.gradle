@@ -16,6 +16,9 @@ group = mod_group_id
 repositories {
     mavenLocal()
     maven {
+        url "https://maven.minecraftforge.net"
+    }
+    maven {
         url "https://www.cursemaven.com"
         content {
             includeGroup "curse.maven"
@@ -82,12 +85,13 @@ obfuscation {
 }
 
 dependencies {
-    // legacyForgeプラグインが forge プロパティを自動的に扱うため、通常の実装でOK
-    implementation "net.neoforged:forge:${minecraft_version}-${forge_version}"
+    // 修正： "net.neoforged:forge" ではなく "net.minecraftforge:forge" を使用します
+    implementation "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    // 【修正箇所】 fg.deobf(...) を外して modImplementation に変える
+    // Polymorph (先ほど修正した通り)
     modImplementation "curse.maven:polymorph-388800:6450982"
 }
+
 
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
