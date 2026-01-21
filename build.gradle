@@ -81,13 +81,14 @@ obfuscation {
     createRemappingConfiguration(configurations.localRuntime)
 }
 
-// 2. 依存関係の追加（Polymorphの導入）
 dependencies {
+    // legacyForgeプラグインが forge プロパティを自動的に扱うため、通常の実装でOK
     implementation "net.neoforged:forge:${minecraft_version}-${forge_version}"
 
-    // 指定いただいた Polymorph (Forge 1.20.1)
-    implementation fg.deobf("curse.maven:polymorph-388800:6450982")
+    // 【修正箇所】 fg.deobf(...) を外して modImplementation に変える
+    modImplementation "curse.maven:polymorph-388800:6450982"
 }
+
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [
