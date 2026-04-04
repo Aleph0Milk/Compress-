@@ -16,10 +16,11 @@ public class DynamicCompressionRecipe extends CustomRecipe {
 
     @Override
     public boolean matches(CraftingContainer container, Level level) {
+        // 全スロット(0-8)が埋まっているか確認
         ItemStack first = container.getItem(0);
         if (first.isEmpty()) return false;
 
-        // 【追加】すでにint最大値なら、これ以上圧縮させない（レシピを非表示にする）
+        // 【追加】すでにint最大値なら、これ以上圧縮させない
         if (CompressionUtils.getLevel(first) >= Integer.MAX_VALUE) {
             return false;
         }
@@ -36,13 +37,21 @@ public class DynamicCompressionRecipe extends CustomRecipe {
 
     @Override
     public ItemStack assemble(CraftingContainer container, RegistryAccess access) {
+        // 最初のスロットから情報をコピー
         ItemStack first = container.getItem(0);
         int currentLevel = CompressionUtils.getLevel(first);
         
-        // 安全のためにここでも判定（通常はmatchesで弾かれるので+1される）
+        // 安全のためにここでも判定
         int nextLevel = (currentLevel == Integer.MAX_VALUE) ? Integer.MAX_VALUE : currentLevel + 1;
         
-        return CompressionUtils.withLevel(first, nextLevel);
+        // 新しいアイテムを作成
+        ItemStack result = CompressionUtils.withLevel(first, nextLevel);
+        
+        // 【重要】出力数を必ず「1」に固定する
+        // これを忘れると、素材のスタック数分だけ完成品が出てしまい、増殖バグになります
+        result.setCount(1);
+        
+        return result;
     }
 
     @Override
