@@ -20,6 +20,7 @@ public class DynamicCompressionRecipe extends CustomRecipe {
         ItemStack first = container.getItem(0);
         if (first.isEmpty()) return false;
 
+        // レベル制限（int最大値まで）
         if (CompressionUtils.getLevel(first) >= Integer.MAX_VALUE) {
             return false;
         }
@@ -40,21 +41,20 @@ public class DynamicCompressionRecipe extends CustomRecipe {
         
         int nextLevel = (currentLevel == Integer.MAX_VALUE) ? Integer.MAX_VALUE : currentLevel + 1;
         
-        // 新しいアイテムを作成
+        // 圧縮された新しいアイテムを生成
         ItemStack result = CompressionUtils.withLevel(first, nextLevel);
         
-        // 【修正1】出力数を必ず1に固定（増殖バグ対策）
+        // 【修正】出力数を1に固定（20→19→... の増殖バグ対策）
         result.setCount(1);
         
         return result;
     }
 
     /**
-     * 【修正2】バケツなどの「容器アイテム」をクラフト後に残さないようにする
+     * 【修正】バケツ等の容器アイテムを返却せず、完全に消滅させる
      */
     @Override
     public NonNullList<ItemStack> getRemainingItems(CraftingContainer container) {
-        // 全スロットに対して「空のリスト」を返すことで、バケツを消滅させる
         return NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
     }
 
