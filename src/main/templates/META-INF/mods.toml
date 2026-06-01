@@ -41,3 +41,10 @@ license="MIT" # あるいはご自身で決めたライセンス
     versionRange="[6.1,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.alephs_compress]]
+    modId="curios"
+    mandatory=false
+    versionRange="[6.1,)"
+    ordering="AFTER"
+    side="BOTH"
