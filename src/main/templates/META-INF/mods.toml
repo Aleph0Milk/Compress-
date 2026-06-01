@@ -34,3 +34,10 @@ license="MIT" # あるいはご自身で決めたライセンス
     versionRange="[0.46,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.alephs_compress]]
+    modId="kubejs"
+    mandatory=true
+    versionRange="[6.1,)"
+    ordering="AFTER"
+    side="BOTH"
