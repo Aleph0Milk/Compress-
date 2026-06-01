@@ -1,4 +1,4 @@
-// server_scripts/compressed_safe_multiplier.js
+// server_scripts/compressed_equipment.js
 
 ItemEvents.crafted(event => {
     const item = event.item;
@@ -12,21 +12,21 @@ ItemEvents.crafted(event => {
             item.nbt.putByte('Unbreakable', 1);
             item.nbt.remove('Damage');
             
-            // 2. アイテムが「素の属性（AttributeModifiers）」をすでに持っているか、Javaの内部データから取得
-            // これにより、Mod武器固有の初期ステータスも安全に吸い上げます
-            let modifiersList = item.nbt.getList('AttributeModifiers', 10); // 10はCompoundTagの型ID
+            // アイテムの既存の属性リストを取得
+            let modifiersList = item.nbt.getList('AttributeModifiers', 10); // 10: CompoundTag型ID
             
-            // もしNBTにまだ属性データがない（バニラのデフォルト状態）なら、Javaから素のデータを吸い上げてNBT化する
+            // NBTにまだ属性データがない（バニラや他Modのデフォルト状態）なら、初期性能を吸い上げる
             if (modifiersList.isEmpty()) {
+                // バニラの全防具スロットとメインハンド
                 let slotTypes = [
-                    global.net.minecraft.world.entity.EquipmentSlot.MAINHAND, // 武器・ツール用
-                    global.net.minecraft.world.entity.EquipmentSlot.CHEST,    // 胴防具用
-                    global.net.minecraft.world.entity.EquipmentSlot.LEGS,     // 脚防具用
-                    global.net.minecraft.world.entity.EquipmentSlot.FEET,     // 足防具用
-                    global.net.minecraft.world.entity.EquipmentSlot.HEAD      // 頭防具用
+                    global.net.minecraft.world.entity.EquipmentSlot.MAINHAND,
+                    global.net.minecraft.world.entity.EquipmentSlot.CHEST,
+                    global.net.minecraft.world.entity.EquipmentSlot.LEGS,
+                    global.net.minecraft.world.entity.EquipmentSlot.FEET,
+                    global.net.minecraft.world.entity.EquipmentSlot.HEAD
                 ];
                 
-                // 全スロットの素の属性をチェックしてリストに突っ込む
+                // バニラ形式の属性を抽出
                 slotTypes.forEach(slot => {
                     let attributeMap = item.minecraftItem.getAttributeModifiers(slot);
                     attributeMap.asMap().forEach((attribute, modifiers) => {
@@ -38,7 +38,7 @@ ItemEvents.crafted(event => {
                             tag.put('Operation', mod.getOperation().getValue());
                             tag.put('Slot', slot.getName());
                             
-                            // 【超重要】UUIDはそのままコピー（ここを倍化させないのが回避のコツ）
+                            // UUIDはそのまま維持（バグ回避の要）
                             let uuidArray = java('net.minecraft.core.UUIDUtil').uuidToIntArray(mod.getId());
                             tag.put('UUID', uuidArray);
                             
@@ -46,33 +46,52 @@ ItemEvents.crafted(event => {
                         });
                     });
                 });
+                
+                // 【Curios 連携】CuriosModがロードされている場合のみ、アクセサリー属性を吸い上げる
+                if (Platform.isModLoaded('curios')) {
+                    try {
+                        let curiosHelper = java('top.the_one_who_blocks.curios.api.CuriosApi').getCuriosHelper();
+                        let curiosModifiers = curiosHelper.getAttributeModifiers(item.minecraftItem);
+                        
+                        curiosModifiers.asMap().forEach((attribute, modifiers) => {
+                            modifiers.forEach(mod => {
+                                let tag = Utils.newMap();
+                                tag.put('AttributeName', attribute.getDescriptionId());
+                                tag.put('Name', mod.getName());
+                                tag.put('Amount', mod.getAmount());
+                                tag.put('Operation', mod.getOperation().getValue());
+                                // アクセサリーはスロット制限（Slotキー）を記述しない、あるいはCuriosのデフォルトに従う
+                                
+                                let uuidArray = java('net.minecraft.core.UUIDUtil').uuidToIntArray(mod.getId());
+                                tag.put('UUID', uuidArray);
+                                
+                                modifiersList.add(tag);
+                            });
+                        });
+                    } catch (e) {
+                        // 万が一の例外エラー時のセーフティ
+                        console.error("Failed to load Curios attributes for compressed item: " + e);
+                    }
+                }
             }
             
-            // 3. 【今回の核心】安全なフィルター倍化処理
-            // リスト内のすべての属性データをスキャンし、「数値（Amount）」だけを綺麗に倍化する
+            // 2. 属性数値（Amount）の安全フィルター倍化処理
             for (let i = 0; i < modifiersList.size(); i++) {
                 let modifierTag = modifiersList.get(i);
-                
-                // 元の「素の数値」を取得
                 let baseAmount = modifierTag.getDouble('Amount');
                 let attributeName = modifierTag.getString('AttributeName');
                 
-                // 計算：素の数値 * (レベル + 1)
-                let newAmount = baseAmount * (level + 1);
-                
-                // 例外処理：攻撃速度（generic.attack_speed）はマイクラの仕様上「マイナス値」でツールごとに設定されているため、
-                // 倍化すると「振るのがめちゃくちゃ遅いツール」になってしまいます。
-                // なので、攻撃速度だけは倍化から除外（または少しだけおまけする）処理を入れます。
+                // 攻撃速度（attack_speed）は倍化すると逆にめちゃくちゃ遅くなるため除外
                 if (attributeName.includes('attack_speed')) {
-                    // 攻撃速度はそのまま（重さは変わるが、振る速度は維持されるリアリティ）
-                    continue; 
+                    continue;
                 }
                 
-                // 安全に数値だけを上書き
+                // 性能を「素の数値 * (レベル + 1)」に書き換え
+                let newAmount = baseAmount * (level + 1);
                 modifierTag.putDouble('Amount', newAmount);
             }
             
-            // 完成した「安全に倍化された属性リスト」をアイテムのNBTにセット
+            // 3. 完成した属性データをNBTへ反映
             if (!modifiersList.isEmpty()) {
                 item.nbt.put('AttributeModifiers', modifiersList);
             }
