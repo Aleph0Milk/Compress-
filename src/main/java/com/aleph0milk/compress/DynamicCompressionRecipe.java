@@ -21,13 +21,22 @@ public class DynamicCompressionRecipe extends CustomRecipe {
         if (first.isEmpty()) return false;
 
         // レベル制限（int最大値まで）
-        if (CompressionUtils.getLevel(first) >= Integer.MAX_VALUE) {
+        int firstLevel = CompressionUtils.getLevel(first);
+        if (firstLevel >= Integer.MAX_VALUE) {
             return false;
         }
         
         for (int i = 0; i < 9; i++) {
             ItemStack stack = container.getItem(i);
+            // 【厳格化】スロットが空、またはアイテムID/バニラタグが異なる場合は不可
             if (stack.isEmpty() || !ItemStack.isSameItemSameTags(stack, first)) {
+                return false;
+            }
+            // 【厳格化】圧縮レベル（CompressionLevel）が1つでも異なるアイテムが混ざっている場合は不可
+            // これにより、通常のレシピ側がNBTを無視していても、こちらの圧縮レシピ側が「同じ圧縮度同士のクラフト」以外を完全にシャットアウトします
+            if (CompressionUtils.getLevel(stack) != firstLevel) {
+                // ※これにより「通常のクラフト（非圧縮アイテムのレシピ）」に圧縮アイテムが誤流用されるのを間接的に防止、
+                // かつレベルが異なる圧縮アイテム（例：x1とx2）を混ぜてクラフトすることを鉄壁ガードします
                 return false;
             }
         }
