@@ -32,14 +32,32 @@ public class DynamicDecompressionRecipe extends CustomRecipe {
         return count == 1 && CompressionUtils.getLevel(target) >= 1;
     }
 
-    @Override
+      @Override
     public ItemStack assemble(CraftingContainer container, RegistryAccess access) {
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack stack = container.getItem(i);
             if (!stack.isEmpty()) {
                 int currentLevel = CompressionUtils.getLevel(stack);
-                // レベルを-1して、個数を9個にして返す
-                ItemStack result = CompressionUtils.withLevel(stack, currentLevel - 1);
+                int nextLevel = currentLevel - 1;
+                
+                ItemStack result;
+                if (nextLevel <= 0) {
+                    // 【修正】レベルが0以下になる場合は、未圧縮のクリーンな状態に戻す
+                    // stackをそのままコピーし、NBTから圧縮タグを完全に削除します
+                    result = stack.copy();
+                    if (result.hasTag() && result.getTag().contains("CompressionLevel")) {
+                        result.getTag().remove("CompressionLevel");
+                        // もしNBTが完全に空になったら、NBTタグ自体をnullにしてバニラと完全一致させる
+                        if (result.getTag().isEmpty()) {
+                            result.setTag(null);
+                        }
+                    }
+                } else {
+                    // 1以上の場合は通常通りレベルを-1して生成
+                    result = CompressionUtils.withLevel(stack, nextLevel);
+                }
+                
+                // 展開されたので9個にして返す
                 result.setCount(9);
                 return result;
             }
