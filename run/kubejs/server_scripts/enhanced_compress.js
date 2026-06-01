@@ -60,7 +60,6 @@ ItemEvents.crafted(event => {
                                 tag.put('Name', mod.getName());
                                 tag.put('Amount', mod.getAmount());
                                 tag.put('Operation', mod.getOperation().getValue());
-                                // アクセサリーはスロット制限（Slotキー）を記述しない、あるいはCuriosのデフォルトに従う
                                 
                                 let uuidArray = java('net.minecraft.core.UUIDUtil').uuidToIntArray(mod.getId());
                                 tag.put('UUID', uuidArray);
@@ -69,7 +68,6 @@ ItemEvents.crafted(event => {
                             });
                         });
                     } catch (e) {
-                        // 万が一の例外エラー時のセーフティ
                         console.error("Failed to load Curios attributes for compressed item: " + e);
                     }
                 }
@@ -81,14 +79,17 @@ ItemEvents.crafted(event => {
                 let baseAmount = modifierTag.getDouble('Amount');
                 let attributeName = modifierTag.getString('AttributeName');
                 
-                // 攻撃速度（attack_speed）は倍化すると逆にめちゃくちゃ遅くなるため除外
                 if (attributeName.includes('attack_speed')) {
-                    continue;
+                    // 攻撃速度用の逆算インフレ処理
+                    let currentRealSpeed = 4.0 + baseAmount;
+                    let targetSpeed = currentRealSpeed * (level + 1);
+                    let newAmount = targetSpeed - 4.0;
+                    modifierTag.putDouble('Amount', newAmount);
+                } else {
+                    // 攻撃力や防御力など、その他のステータスは素直に倍化
+                    let newAmount = baseAmount * (level + 1);
+                    modifierTag.putDouble('Amount', newAmount);
                 }
-                
-                // 性能を「素の数値 * (レベル + 1)」に書き換え
-                let newAmount = baseAmount * (level + 1);
-                modifierTag.putDouble('Amount', newAmount);
             }
             
             // 3. 完成した属性データをNBTへ反映
