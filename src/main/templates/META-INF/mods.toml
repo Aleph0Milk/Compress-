@@ -45,6 +45,6 @@ license="MIT" # あるいはご自身で決めたライセンス
 [[dependencies.alephs_compress]]
     modId="curios"
     mandatory=false
-    versionRange="[6.1,)"
+    versionRange="[5.14,)"
     ordering="AFTER"
     side="BOTH"
